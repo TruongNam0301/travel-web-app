@@ -1,26 +1,16 @@
 import type { RouteObject } from 'react-router-dom';
 import {
-  HomePage,
   LoginPage,
   RegisterPage,
-  DashboardPage,
   UnauthorizedPage,
   NotFoundPage,
+  DashboardPage,
 } from '../components/pages';
 import { withAuth } from '../hocs';
 
-// Protected Dashboard (requires authentication)
 const ProtectedDashboard = withAuth(DashboardPage);
 
-/**
- * Application route configuration
- * Defines all routes with their protection levels
- */
 export const routes: RouteObject[] = [
-  {
-    path: '/',
-    element: <HomePage />,
-  },
   {
     path: '/login',
     element: <LoginPage />,

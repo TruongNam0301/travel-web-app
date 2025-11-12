@@ -1,14 +1,14 @@
-import { tokenManager } from '@/package/storage';
+import { useAuth } from '@/core/hooks';
 
 /**
  * Unauthorized Hook
  * Custom hook containing unauthorized page logic and state management
  */
 export function useUnauthorized() {
-  const userRole = tokenManager.getUserRoleFromToken();
+  const { user } = useAuth();
 
   return {
-    userRole,
+    userRole: user?.role,
   };
 }
 

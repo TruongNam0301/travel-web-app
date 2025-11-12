@@ -1,17 +1,32 @@
 
+/**
+ * Base API Response Structure
+ * Matches backend BaseResponseDto
+ */
 export interface ApiResponse<T = unknown> {
-  success: true;
-  data: T;
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data?: T;           // Present on success
+  error?: object;     // Present on error
   timestamp: string;
+  path: string;
+  method: string;
 }
 
 
+/**
+ * Legacy ApiError interface for backward compatibility
+ * @deprecated Use ApiResponse instead
+ */
 export interface ApiError {
   success: false;
   message: string;
   statusCode: number;
   timestamp: string;
   path: string;
+  method?: string;
+  error?: object;
 }
 
 
@@ -46,15 +61,19 @@ export interface HttpClientConfig {
 export class ApiErrorException extends Error {
   public readonly statusCode: number;
   public readonly path: string;
+  public readonly method: string;
   public readonly timestamp: string;
   public readonly success = false as const;
+  public readonly error?: object;
 
-  constructor(error: ApiError) {
+  constructor(error: ApiError | ApiResponse) {
     super(error.message);
     this.name = 'ApiErrorException';
     this.statusCode = error.statusCode;
     this.path = error.path;
+    this.method = error.method || 'UNKNOWN';
     this.timestamp = error.timestamp;
+    this.error = error.error;
 
     // Maintains proper stack trace for where our error was thrown (only available on V8)
     const captureStackTrace = (Error as typeof Error & {
@@ -75,7 +94,9 @@ export class ApiErrorException extends Error {
       message: this.message,
       statusCode: this.statusCode,
       path: this.path,
+      method: this.method,
       timestamp: this.timestamp,
+      error: this.error,
     };
   }
 }

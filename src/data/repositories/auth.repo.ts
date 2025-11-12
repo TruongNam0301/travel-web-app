@@ -4,9 +4,7 @@ import type {
   RegisterRequest,
   LoginRequest,
   AuthResponseData,
-  RefreshTokenRequest,
   TokenRefreshResponseData,
-  LogoutRequest,
   LogoutResponseData,
 } from '@/data/models/auth.models';
 
@@ -35,29 +33,39 @@ export const login = async (data: LoginRequest): Promise<AuthResponseData> => {
 
 /**
  * Refresh access token
- * @param data - Refresh token request
+ * @param refreshToken - The refresh token to use for getting new tokens
  * @returns New tokens
  */
 export const refreshToken = async (
-  data: RefreshTokenRequest
+  refreshToken: string
 ): Promise<TokenRefreshResponseData> => {
   return httpClient.post<TokenRefreshResponseData>(
     API_ENDPOINTS.auth.refresh(),
-    data
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${refreshToken}`
+      }
+    }
   );
 };
 
 /**
  * Logout user
- * @param data - Logout request
+ * @param refreshToken - The refresh token to revoke
  * @returns Logout response
  */
 export const logout = async (
-  data: LogoutRequest
+  refreshToken: string
 ): Promise<LogoutResponseData> => {
   return httpClient.post<LogoutResponseData>(
     API_ENDPOINTS.auth.logout(),
-    data
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${refreshToken}`
+      }
+    }
   );
 };
 

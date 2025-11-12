@@ -1,5 +1,6 @@
 import { routes } from '@/core/routes'
 import { BrowserRouter, useRoutes } from 'react-router-dom'
+import { AuthProvider } from '@/core/providers'
 
 function AppRoutes() {
   const element = useRoutes(routes)
@@ -9,7 +10,9 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   )
 }

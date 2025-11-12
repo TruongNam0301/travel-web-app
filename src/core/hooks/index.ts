@@ -1,4 +1,3 @@
 // Export all custom hooks here
-// Example: export { useAuth } from './useAuth';
-export {};
+export { useAuth } from './useAuth';
 

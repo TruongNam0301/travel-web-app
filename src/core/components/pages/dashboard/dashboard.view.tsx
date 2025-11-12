@@ -5,7 +5,7 @@ import { useDashboard } from './dashboard.hook';
  * Dashboard View
  * Presentational component for the dashboard page
  */
-export function DashboardView() {
+ function DashboardView() {
   const { userRole, userId, handleLogout } = useDashboard();
 
   return (
@@ -28,3 +28,4 @@ export function DashboardView() {
   );
 }
 
+export default DashboardView;

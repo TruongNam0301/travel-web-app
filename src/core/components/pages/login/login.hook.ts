@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import type { RegisterOptions } from 'react-hook-form'
 import { login as loginRequest } from '@/data'
-import { tokenManager } from '@/package/storage'
-import { getErrorMessage } from '@/package/http'
+import { TokenManager } from '@/package/storage'
+import { useAuthStore } from '@/core/stores'
 import { showErrorToast, showSuccessToast } from '@/core/helpers/toast.helper'
 
 interface LocationState {
@@ -23,6 +23,7 @@ export function useLogin() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as LocationState)?.from?.pathname || '/dashboard'
+  const { setUser } = useAuthStore()
   const [isSubmittingForgotPassword, setIsSubmittingForgotPassword] =
     useState(false)
   const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(
@@ -59,7 +60,7 @@ export function useLogin() {
       password: '',
       rememberMe: true,
     },
-    mode: 'onTouched',
+    mode: 'onSubmit',
   })
 
   const onSubmit = handleSubmit(async (values) => {
@@ -69,7 +70,10 @@ export function useLogin() {
         password: values.password,
       })
 
-      tokenManager.setTokens(
+      console.log('authResponse', authResponse)
+
+      // Save tokens
+      TokenManager.saveTokens(
         authResponse.accessToken,
         authResponse.refreshToken
       )
@@ -77,6 +81,8 @@ export function useLogin() {
         'travelly.auth.rememberMe',
         values.rememberMe ? 'true' : 'false'
       )
+
+      setUser(authResponse.user)
 
       showSuccessToast('Logged in successfully!')
       reset({
@@ -86,7 +92,7 @@ export function useLogin() {
       })
       navigate(from, { replace: true })
     } catch (error) {
-      showErrorToast(getErrorMessage(error))
+      showErrorToast(error instanceof Error ? error.message : 'An unknown error occurred')
     }
   })
 

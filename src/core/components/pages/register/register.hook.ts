@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import type { RegisterOptions } from 'react-hook-form'
-import { register as registerRequest } from '@/data'
-import { tokenManager } from '@/package/storage'
-import { getErrorMessage } from '@/package/http'
 import { showErrorToast, showSuccessToast } from '@/core/helpers/toast.helper'
+import { useAuthStore } from '@/core/stores'
+import { register as registerRequest } from '@/data'
+import { TokenManager } from '@/package/storage'
+import type { RegisterOptions } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 
 interface RegisterFormValues {
   name: string
@@ -16,6 +16,7 @@ interface RegisterFormValues {
 export function useRegister() {
   const navigate = useNavigate()
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const { setUser } = useAuthStore()
   const validationRules: Record<
     Extract<keyof RegisterFormValues, 'name' | 'email' | 'password'>,
     RegisterOptions<RegisterFormValues>
@@ -56,7 +57,7 @@ export function useRegister() {
       password: '',
       acceptTerms: false,
     },
-    mode: 'onTouched',
+    mode: 'onSubmit',
   })
 
   const onSubmit = handleSubmit(async (values) => {
@@ -67,10 +68,14 @@ export function useRegister() {
         password: values.password,
       })
 
-      tokenManager.setTokens(
+      // Save tokens
+      TokenManager.saveTokens(
         authResponse.accessToken,
         authResponse.refreshToken
       )
+
+      setUser(authResponse.user)
+
       showSuccessToast('Account created! Welcome aboard.')
       reset({
         name: '',
@@ -80,13 +85,13 @@ export function useRegister() {
       })
       navigate('/dashboard', { replace: true })
     } catch (error) {
-      showErrorToast(getErrorMessage(error))
+      showErrorToast(
+        error instanceof Error ? error.message : 'An unknown error occurred'
+      )
     }
   })
 
-  const registerFieldWithRules = <
-    TField extends 'name' | 'email' | 'password',
-  >(
+  const registerFieldWithRules = <TField extends 'name' | 'email' | 'password'>(
     field: TField
   ) =>
     registerField(

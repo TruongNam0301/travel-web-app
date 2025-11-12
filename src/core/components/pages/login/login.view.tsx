@@ -1,11 +1,11 @@
-import { useState, type ChangeEvent } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Controller } from 'react-hook-form'
 import {
   Button,
   Callout,
+  Card,
   Checkbox,
-  Dialog,
   Flex,
   Heading,
   IconButton,
@@ -21,69 +21,44 @@ import {
   EyeOpenIcon,
   LockClosedIcon,
 } from '@radix-ui/react-icons'
-import { AuthLayout, AuthPanel, AuthTabs } from '../auth'
 import { useLogin } from './login.hook'
 
 export function LoginView() {
   const [showPassword, setShowPassword] = useState(false)
-  const [forgotEmail, setForgotEmail] = useState('')
   const {
     registerField,
     control,
     errors,
     isSubmitting,
     onSubmit,
-    submitForgotPassword,
-    isSubmittingForgotPassword,
-    forgotPasswordError,
   } = useLogin()
 
   return (
-    <AuthLayout
-      hero={
+    <Flex
+      minHeight="100vh"
+      align="center"
+      justify="center"
+      p="5"
+      style={{
+        background:
+          'radial-gradient(circle at top left, hsl(210 80% 96%), transparent 60%), radial-gradient(circle at bottom right, hsl(160 80% 94%), transparent 55%)',
+      }}
+    >
+      <Card
+        size="4"
+        style={{
+          width: '100%',
+          maxWidth: 480,
+          boxShadow:
+            '0 10px 30px hsl(250 50% 35% / 0.15), 0 2px 12px hsl(250 60% 45% / 0.12)',
+        }}
+      >
         <Flex direction="column" gap="6">
           <Flex direction="column" gap="2">
-            <Heading size="8" weight="medium">
-              Plan your perfect getaway
-            </Heading>
-            <Text size="4" style={{ maxWidth: 360 }}>
-              Access curated destinations, smart itineraries, and real-time
-              alerts for a seamless travel experience.
-            </Text>
+            <Heading size="7">Welcome back</Heading>
+            <Text color="gray">Log in to your account</Text>
           </Flex>
 
-          <Flex direction="column" gap="4">
-            <Flex direction="column" gap="1">
-              <Text size="5" weight="medium">
-                5k+
-              </Text>
-              <Text size="3" color="gray">
-                trips planned with Travelly
-              </Text>
-            </Flex>
-            <Flex direction="column" gap="1">
-              <Text size="5" weight="medium">
-                98%
-              </Text>
-              <Text size="3" color="gray">
-                customer satisfaction score
-              </Text>
-            </Flex>
-          </Flex>
-        </Flex>
-      }
-    >
-      <AuthPanel
-        title="Welcome back"
-        description="Log in to manage your journeys, save favorites, and monitor your upcoming adventures."
-        footer={
-          <Text size="3" align="center">
-            Don&apos;t have an account?{' '}
-            <Link to="/register">Create one now</Link>
-          </Text>
-        }
-      >
-        <AuthTabs active="login">
           <form onSubmit={onSubmit}>
             <Flex direction="column" gap="5">
               <Flex direction="column" gap="2">
@@ -171,67 +146,6 @@ export function LoginView() {
                     </Flex>
                   )}
                 />
-
-                <Dialog.Root>
-                  <Dialog.Trigger>
-                    <Button variant="ghost" size="2" type="button">
-                      Forgot password?
-                    </Button>
-                  </Dialog.Trigger>
-
-                  <Dialog.Content size="3" style={{ maxWidth: 420 }}>
-                    <Dialog.Title>Reset your password</Dialog.Title>
-                    <Dialog.Description>
-                      Enter your email address and we&apos;ll send you a reset
-                      link.
-                    </Dialog.Description>
-
-                    {forgotPasswordError ? (
-                      <Callout.Root color="red" variant="soft">
-                        <Callout.Text>{forgotPasswordError}</Callout.Text>
-                      </Callout.Root>
-                    ) : null}
-
-                    <Flex direction="column" gap="3" mt="4">
-                      <TextFieldRoot
-                        id="forgot-email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        value={forgotEmail}
-                        onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                          setForgotEmail(event.target.value)
-                        }
-                      >
-                        <TextFieldSlot>
-                          <EnvelopeClosedIcon />
-                        </TextFieldSlot>
-                      </TextFieldRoot>
-
-                      <Flex gap="3" justify="end">
-                        <Dialog.Close>
-                          <Button variant="soft" color="gray" type="button">
-                            Cancel
-                          </Button>
-                        </Dialog.Close>
-                        <Button
-                          type="button"
-                          onClick={async () => {
-                            const success =
-                              await submitForgotPassword(forgotEmail)
-                            if (success) {
-                              setForgotEmail('')
-                            }
-                          }}
-                          loading={isSubmittingForgotPassword}
-                          disabled={!forgotEmail}
-                        >
-                          Send reset link
-                        </Button>
-                      </Flex>
-                    </Flex>
-                  </Dialog.Content>
-                </Dialog.Root>
               </Flex>
 
               <Button
@@ -244,8 +158,16 @@ export function LoginView() {
               </Button>
             </Flex>
           </form>
-        </AuthTabs>
-      </AuthPanel>
-    </AuthLayout>
+
+          <Flex direction="column" gap="3">
+            <div />
+            <Text size="3" align="center">
+              Don&apos;t have an account?{' '}
+              <Link to="/register">Sign up</Link>
+            </Text>
+          </Flex>
+        </Flex>
+      </Card>
+    </Flex>
   )
 }

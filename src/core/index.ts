@@ -5,4 +5,6 @@ export * from './types';
 export * from './helpers';
 export * from './hocs';
 export * from './routes';
+export * from './stores';
+export * from './providers';
 

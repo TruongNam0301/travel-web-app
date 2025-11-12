@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import type { ComponentType } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { tokenManager } from '@/package/storage';
+import { useAuthStore } from '@/core/stores';
+import { TokenManager } from '@/package/storage';
 
 /**
  * Higher-Order Component for authentication protection
@@ -16,13 +17,15 @@ export function withAuth<P extends object>(
   return function AuthenticatedComponent(props: P) {
     const navigate = useNavigate();
     const location = useLocation();
+    const { isAuthenticated, isInitialized, isLoading } = useAuthStore();
 
     useEffect(() => {
-      const isAuthenticated = tokenManager.isAuthenticated();
-      
+      // Wait for auth to be initialized before checking
+      if (!isInitialized) return;
+
       if (!isAuthenticated) {
         // Clear any stale tokens
-        tokenManager.clearTokens();
+        TokenManager.clearTokens();
         
         // Redirect to login with the current location for redirect after login
         navigate('/login', {
@@ -30,10 +33,15 @@ export function withAuth<P extends object>(
           state: { from: location },
         });
       }
-    }, [navigate, location]);
+    }, [isAuthenticated, isInitialized, navigate, location]);
+
+    // Show loading state while auth is initializing
+    if (!isInitialized || isLoading) {
+      return null;
+    }
 
     // Only render if authenticated
-    if (!tokenManager.isAuthenticated()) {
+    if (!isAuthenticated) {
       return null;
     }
 

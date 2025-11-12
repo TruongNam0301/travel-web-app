@@ -8,8 +8,6 @@ import {
 import type {
   RegisterRequest,
   LoginRequest,
-  LogoutRequest,
-  RefreshTokenRequest,
 } from '@/data/models/auth.models';
 
 /**
@@ -38,7 +36,7 @@ export const useLogin = () => {
  */
 export const useLogout = () => {
   return useMutation({
-    mutationFn: (data: LogoutRequest) => logout(data),
+      mutationFn: (refreshToken: string) => logout(refreshToken),
   });
 };
 
@@ -48,7 +46,7 @@ export const useLogout = () => {
  */
 export const useRefreshToken = () => {
   return useMutation({
-    mutationFn: (data: RefreshTokenRequest) => refreshToken(data),
+    mutationFn: (token: string) => refreshToken(token),
   });
 };
 

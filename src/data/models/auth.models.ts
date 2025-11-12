@@ -20,6 +20,7 @@ export interface LoginRequest {
 
 /**
  * Refresh Token Request
+ * Note: The refresh token is sent via Authorization header, not in the request body
  */
 export interface RefreshTokenRequest {
   refreshToken: string;
@@ -27,6 +28,7 @@ export interface RefreshTokenRequest {
 
 /**
  * Logout Request
+ * Note: The refresh token is sent via Authorization header, not in the request body
  */
 export interface LogoutRequest {
   refreshToken: string;

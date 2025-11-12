@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import type { ComponentType } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { tokenManager } from '@/package/storage';
+import { useAuthStore } from '@/core/stores';
+import { TokenManager } from '@/package/storage';
 import type { UserRole } from '@/data';
 
 /**
@@ -18,14 +19,16 @@ export function withRole<P extends object>(
     return function RoleProtectedComponent(props: P) {
       const navigate = useNavigate();
       const location = useLocation();
+      const { user, isAuthenticated, isInitialized, isLoading } = useAuthStore();
 
       useEffect(() => {
-        const isAuthenticated = tokenManager.isAuthenticated();
-        
+        // Wait for auth to be initialized before checking
+        if (!isInitialized) return;
+
         // First check if user is authenticated at all
-        if (!isAuthenticated) {
+        if (!isAuthenticated || !user) {
           // Clear any stale tokens
-          tokenManager.clearTokens();
+          TokenManager.clearTokens();
           
           // Redirect to login with the current location for redirect after login
           navigate('/login', {
@@ -35,22 +38,24 @@ export function withRole<P extends object>(
           return;
         }
 
-        // Check user role
-        const userRole = tokenManager.getUserRoleFromToken();
-        
-        if (!userRole || !allowedRoles.includes(userRole as UserRole)) {
+        // Check user role from store
+        if (!allowedRoles.includes(user.role)) {
           // User doesn't have required role - redirect to unauthorized page
           navigate('/unauthorized', { replace: true });
         }
-      }, [navigate, location]);
+      }, [user, isAuthenticated, isInitialized, navigate, location]);
 
-      // Verify authentication and role before rendering
-      if (!tokenManager.isAuthenticated()) {
+      // Show loading state while auth is initializing
+      if (!isInitialized || isLoading) {
         return null;
       }
 
-      const userRole = tokenManager.getUserRoleFromToken();
-      if (!userRole || !allowedRoles.includes(userRole as UserRole)) {
+      // Verify authentication and role before rendering
+      if (!isAuthenticated || !user) {
+        return null;
+      }
+
+      if (!allowedRoles.includes(user.role)) {
         return null;
       }
 

@@ -1,234 +1,105 @@
-/**
- * HTTP Interceptors
- * Request and response interceptors for authentication and error handling
- */
+import type { AxiosInstance } from "axios";
+import { TokenManager } from "../storage";
+import { useAuthStore } from "@/core/stores";
 
-import type {
-  AxiosInstance,
-  AxiosError,
-  InternalAxiosRequestConfig,
-  AxiosResponse,
-} from 'axios';
-import { tokenManager } from '@/package/storage';
-import { isApiError } from './client';
-import type { ApiError } from './types';
-import { ApiErrorException } from './types';
-import type { TokenRefreshResponse } from '@/data';
-
-/**
- * State for managing token refresh
- * 
- * When a 401 error occurs, the first request triggers a token refresh.
- * Subsequent requests are queued and will be retried after the refresh completes.
- */
 let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: unknown) => void;
-}> = [];
+let failedQueue: { resolve: (value: unknown) => void; reject: (reason?: unknown) => void; }[] = [];
 
-/**
- * Process queued requests after token refresh
- * @param error - Error to reject all queued requests with, or null to resolve them
- */
-const processQueue = (error: Error | null = null): void => {
-  failedQueue.forEach((promise) => {
-    if (error) {
-      promise.reject(error);
-    } else {
-      promise.resolve();
-    }
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) prom.reject(error);
+    else prom.resolve(token);
   });
-
   failedQueue = [];
 };
 
-/**
- * Handle failed token refresh
- * Clears tokens, resets refresh state, and redirects to login
- */
-const handleTokenRefreshFailure = (error?: Error): void => {
-  tokenManager.clearTokens();
-  isRefreshing = false;
-  processQueue(error || new Error('Token refresh failed'));
+export const setupInterceptors = (axiosInstance: AxiosInstance) => {
+  // Request interceptor - Add auth token
+  axiosInstance.interceptors.request.use((config) => {
+    const token = TokenManager.getAccessToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  });
 
-  if (typeof window !== 'undefined') {
-    window.location.href = '/login';
-  }
-};
+  // Response interceptor - Handle errors and token refresh
+  axiosInstance.interceptors.response.use(
+    (response) => response.data ,
+    async (error) => {
+      console.log('error', error);
+      const originalRequest = error.config;
 
-/**
- * Refresh access token using refresh token
- * @param instance - Axios instance to use for the request
- * @returns Promise with new access and refresh tokens
- */
-async function refreshAccessToken(
-  instance: AxiosInstance
-): Promise<{ accessToken: string; refreshToken: string }> {
-  const refreshToken = tokenManager.getRefreshToken();
-  
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
-  const response = await instance.post<TokenRefreshResponse>(
-    '/auth/refresh',
-    { refreshToken }
-  );
-
-  return response.data.data;
-}
-
-/**
- * Queue request to be retried after token refresh
- * @param instance - Axios instance to use for retrying
- * @param config - Original request configuration
- * @returns Promise that resolves when token refresh completes and request is retried
- */
-function queueFailedRequest(
-  instance: AxiosInstance,
-  config: InternalAxiosRequestConfig
-): Promise<AxiosResponse> {
-  return new Promise((resolve, reject) => {
-    failedQueue.push({ resolve, reject });
-  })
-    .then(() => {
-      // Retry original request with new token
-      const accessToken = tokenManager.getAccessToken();
-      if (accessToken && config.headers) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
-      }
-      return instance(config);
-    })
-    .catch((err) => {
-      return Promise.reject(err);
-    });
-}
-
-/**
- * Setup request interceptor
- * Adds authentication token to all requests
- */
-export function setupRequestInterceptor(instance: AxiosInstance): void {
-  instance.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-      // Get access token from token manager
-      const accessToken = tokenManager.getAccessToken();
-
-      // Add token to request headers if it exists
-      if (accessToken && config.headers) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
+      if(originalRequest.url === '/auth/refresh') {
+        TokenManager.clearTokens();
+          useAuthStore.getState().clearUser();
+          window.location.href = "/login";
+        return Promise.reject(error);
       }
 
-      return config;
-    },
-    (error: AxiosError) => {
-      return Promise.reject(error);
-    }
-  );
-}
-
-/**
- * Setup response interceptor
- * Handles token refresh on 401 errors and transforms API errors
- */
-export function setupResponseInterceptor(instance: AxiosInstance): void {
-  instance.interceptors.response.use(
-    (response: AxiosResponse) => {
-      // Return successful response as-is
-      return response;
-    },
-    async (error: AxiosError) => {
-      const originalRequest = error.config as InternalAxiosRequestConfig & {
-        _retry?: boolean;
-      };
-
-      // Handle 401 Unauthorized errors with token refresh
-      if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-        // Check if this is a token refresh request itself
-        if (originalRequest.url?.includes('/auth/refresh')) {
-          handleTokenRefreshFailure();
-          return Promise.reject(error);
-        }
-
-        // If already refreshing, queue this request
+      if (error.response?.status === 401 && !originalRequest._retry) {
         if (isRefreshing) {
-          return queueFailedRequest(instance, originalRequest);
+          try {
+            const token = await new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            });
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return axiosInstance(originalRequest);
+          } catch (err) {
+            return Promise.reject(err);
+          }
         }
 
-        // Mark as retrying to prevent infinite loops
         originalRequest._retry = true;
         isRefreshing = true;
 
+        const refreshToken = TokenManager.getRefreshToken();
+        if (!refreshToken) {
+          TokenManager.clearTokens();
+          useAuthStore.getState().clearUser();
+          window.location.href = "/login";
+          return Promise.reject(error);
+        }
+
         try {
-          // Attempt to refresh the access token
-          const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(instance);
-
-          // Update tokens
-          tokenManager.setTokens(accessToken, newRefreshToken);
-
-          // Update authorization header for the original request
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
-
-          // Process queued requests
-          processQueue();
+          const res = await axiosInstance.post("/auth/refresh", {}, {
+            headers: {
+              Authorization: `Bearer ${refreshToken}`
+            }
+          });
+          const { accessToken, refreshToken: newRefresh } = res.data;
+          TokenManager.saveTokens(accessToken, newRefresh);
+          axiosInstance.defaults.headers.Authorization = `Bearer ${accessToken}`;
+          processQueue(null, accessToken);
+          return axiosInstance(originalRequest);
+        } catch (err) {
+          console.log('err', err);
+          processQueue(err, null);
+          TokenManager.clearTokens();
+          useAuthStore.getState().clearUser();
+          window.location.href = "/login";
+          return Promise.reject(err);
+        } finally {
           isRefreshing = false;
-
-          // Retry the original request
-          return instance(originalRequest);
-        } catch (refreshError) {
-          handleTokenRefreshFailure(refreshError as Error);
-          return Promise.reject(refreshError);
         }
       }
 
-      // Transform API errors to ApiErrorException
-      if (error.response?.data && isApiError(error.response.data)) {
-        const apiError = error.response.data as ApiError;
-        const errorException = createApiErrorException(apiError);
-        return Promise.reject(errorException);
+      // Check if the error response already has the BaseResponseDto structure
+      if (error.response?.data && typeof error.response.data === 'object' && 'success' in error.response.data) {
+        // Backend already sent a properly formatted error response
+        return Promise.reject(error.response.data);
       }
 
-      // For network errors or other errors without response
-      if (!error.response) {
-        const errorMessage = error.code === 'ECONNABORTED' 
-          ? 'Request timeout. Please try again.'
-          : error.code === 'ERR_NETWORK'
-          ? 'Network error. Please check your connection.'
-          : 'An unexpected error occurred';
+      // Fallback: Standardized error object for unexpected errors
+      const formattedError = {
+        success: false,
+        statusCode: error.response?.status || 500,
+        message: error.response?.data?.message || error.message || "Unexpected error occurred",
+        path: error.config?.url || 'unknown',
+        method: error.config?.method?.toUpperCase() || 'UNKNOWN',
+        timestamp: new Date().toISOString(),
+        error: error.response?.data?.error || { details: error.message },
+      };
 
-        return Promise.reject(new Error(errorMessage));
-      }
-
-      // Return other errors as-is
-      return Promise.reject(error);
+      return Promise.reject(formattedError);
     }
   );
-}
-
-/**
- * Create ApiErrorException from ApiError
- */
-function createApiErrorException(error: ApiError): ApiErrorException {
-  return new ApiErrorException(error);
-}
-
-/**
- * Setup all interceptors
- */
-export function setupInterceptors(instance: AxiosInstance): void {
-  setupRequestInterceptor(instance);
-  setupResponseInterceptor(instance);
-}
-
-/**
- * Reset refresh state
- * Useful for testing or manual intervention
- */
-export function resetRefreshState(): void {
-  isRefreshing = false;
-  failedQueue = [];
-}
-
+};
