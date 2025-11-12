@@ -31,6 +31,9 @@ export {
 // Message repository
 export { createMessage, listMessages } from './message.repo';
 
+// Auth repository
+export { register, login, refreshToken, logout } from './auth.repo';
+
 // Health repository
 export {
   checkHealth,

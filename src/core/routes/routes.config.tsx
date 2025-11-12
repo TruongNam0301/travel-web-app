@@ -1,10 +1,11 @@
 import type { RouteObject } from 'react-router-dom';
-import { 
-  HomePage, 
-  LoginPage, 
-  DashboardPage, 
-  UnauthorizedPage, 
-  NotFoundPage 
+import {
+  HomePage,
+  LoginPage,
+  RegisterPage,
+  DashboardPage,
+  UnauthorizedPage,
+  NotFoundPage,
 } from '../components/pages';
 import { withAuth } from '../hocs';
 
@@ -23,6 +24,10 @@ export const routes: RouteObject[] = [
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
   },
   {
     path: '/dashboard',
