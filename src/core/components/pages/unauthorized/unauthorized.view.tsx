@@ -1,12 +1,12 @@
-import { Link } from 'react-router-dom';
-import { useUnauthorized } from './unauthorized.hook';
+import { Link } from 'react-router-dom'
+import { useUnauthorized } from './unauthorized.hook'
 
 /**
  * Unauthorized View
  * Presentational component for the unauthorized page (403)
  */
 export function UnauthorizedView() {
-  const { userRole } = useUnauthorized();
+  const { userRole } = useUnauthorized()
 
   return (
     <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -21,21 +21,20 @@ export function UnauthorizedView() {
         </p>
       )}
       <div style={{ marginTop: '2rem' }}>
-        <Link 
-          to="/dashboard"
-          style={{ 
-            padding: '0.75rem 1.5rem', 
-            background: '#1976d2', 
-            color: 'white', 
+        <Link
+          to="/plans"
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: '#1976d2',
+            color: 'white',
             textDecoration: 'none',
             borderRadius: '4px',
-            display: 'inline-block'
+            display: 'inline-block',
           }}
         >
           Go to Dashboard
         </Link>
       </div>
     </div>
-  );
+  )
 }
-

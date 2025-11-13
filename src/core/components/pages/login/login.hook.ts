@@ -22,7 +22,7 @@ interface LoginFormValues {
 export function useLogin() {
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as LocationState)?.from?.pathname || '/dashboard'
+  const from = (location.state as LocationState)?.from?.pathname || '/plans'
   const { setUser } = useAuthStore()
   const [isSubmittingForgotPassword, setIsSubmittingForgotPassword] =
     useState(false)
@@ -92,7 +92,9 @@ export function useLogin() {
       })
       navigate(from, { replace: true })
     } catch (error) {
-      showErrorToast(error instanceof Error ? error.message : 'An unknown error occurred')
+      showErrorToast(
+        error instanceof Error ? error.message : 'An unknown error occurred'
+      )
     }
   })
 

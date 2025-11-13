@@ -1,7 +1,6 @@
-// Export all page components here
-export { LoginPage } from './login';
-export { RegisterPage } from './register';
-export { default as DashboardPage } from './dashboard/dashboard.view';    
-export { UnauthorizedPage } from './unauthorized';
-export { NotFoundPage } from './not-found';
-
+export * from './login'
+export * from './register'
+export * from './plans'
+export * from './settings'
+export * from './documents'
+export * from './unauthorized'

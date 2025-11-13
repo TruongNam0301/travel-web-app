@@ -1,52 +1,57 @@
-import { useEffect } from 'react';
-import type { ReactNode } from 'react';
-import { useAuthStore } from '@/core/stores';
-import { TokenManager } from '@/package/storage';
-import { getCurrentUser } from '@/data/repositories/user.repo';
+import { useAuthStore } from '@/core/stores'
+import { getCurrentUser } from '@/data/repositories/user.repo'
+import { TokenManager } from '@/package/storage'
+import type { ReactNode } from 'react'
+import { useEffect } from 'react'
+import { LoadingOverlay } from '../components'
+import { PUBLIC_ROUTES, ROUTE } from '../routes/routes.constants'
+import { useNavigate } from 'react-router-dom'
 
 interface AuthProviderProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
-
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const { setUser, clearUser, setLoading, setInitialized, isLoading } = useAuthStore();
+  const {
+    setUser,
+    clearUser,
+    setLoading,
+    setInitialized,
+    isLoading,
+    isInitialized,
+  } = useAuthStore()
+  const navigate = useNavigate()
 
   useEffect(() => {
-    console.log('AuthProvider useEffect');
     const initAuth = async () => {
-      setLoading(true);
+      setLoading(true)
 
       try {
-        const hasTokens = TokenManager.isHasTokens();    
+        const hasTokens = TokenManager.isHasTokens()
+        if (!hasTokens) throw new Error('No tokens found')
 
-        if (!hasTokens) {
-          clearUser();
-          return;
+        const user = await getCurrentUser()
+        setUser(user)
+
+        if (PUBLIC_ROUTES.includes(window.location.pathname)) {
+          navigate(ROUTE.plans)
         }
-
-        const user = await getCurrentUser();
-
-
-        setUser(user?.data ?? null);
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-
-        TokenManager.clearTokens();
-        clearUser();
+      } catch {
+        TokenManager.clearTokens()
+        clearUser()
       } finally {
-        setLoading(false);
-        setInitialized(true);
+        setLoading(false)
+        setInitialized(true)
       }
-    };
+    }
 
-    initAuth();
-  }, [setUser, clearUser, setLoading, setInitialized]);
+    initAuth()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (isLoading || !isInitialized) {
+    return <LoadingOverlay isLoading={isLoading} />
   }
 
-  return <>{children}</>;
-};
-
+  return <>{children}</>
+}

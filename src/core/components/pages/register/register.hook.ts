@@ -83,7 +83,7 @@ export function useRegister() {
         password: '',
         acceptTerms: false,
       })
-      navigate('/dashboard', { replace: true })
+      navigate('/plans', { replace: true })
     } catch (error) {
       showErrorToast(
         error instanceof Error ? error.message : 'An unknown error occurred'

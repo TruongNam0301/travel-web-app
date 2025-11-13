@@ -1,21 +1,21 @@
-import { create } from 'zustand';
-import type { User } from '@/data/entities/user.entities';
+import { create } from 'zustand'
+import type { User } from '@/data/entities/user.entities'
 
 interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  isInitialized: boolean;
+  user: User | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  isInitialized: boolean
 }
 
 interface AuthActions {
-  setUser: (user: User | null) => void;
-  clearUser: () => void;
-  setLoading: (isLoading: boolean) => void;
-  setInitialized: (isInitialized: boolean) => void;
+  setUser: (user: User | null) => void
+  clearUser: () => void
+  setLoading: (isLoading: boolean) => void
+  setInitialized: (isInitialized: boolean) => void
 }
 
-export type AuthStore = AuthState & AuthActions;
+export type AuthStore = AuthState & AuthActions
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
@@ -23,7 +23,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isLoading: false,
   isInitialized: false,
 
-  // Actions
   setUser: (user) =>
     set({
       user,
@@ -45,5 +44,4 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({
       isInitialized,
     }),
-}));
-
+}))

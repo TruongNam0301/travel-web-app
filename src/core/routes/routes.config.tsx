@@ -1,56 +1,52 @@
-import type { RouteObject } from 'react-router-dom';
+import type { RouteObject } from 'react-router-dom'
 import {
+  DocumentsPage,
   LoginPage,
+  PlansPage,
   RegisterPage,
+  SettingsPage,
   UnauthorizedPage,
-  NotFoundPage,
-  DashboardPage,
-} from '../components/pages';
-import { withAuth } from '../hocs';
+} from '@/core/components/pages'
+import { DashboardLayout } from '@/core/components/organisms'
+import { withAuth } from '@/core/hocs'
+import { ROUTE } from './routes.constants'
 
-const ProtectedDashboard = withAuth(DashboardPage);
+const ProtectedDashboardLayout = withAuth(DashboardLayout)
 
-export const routes: RouteObject[] = [
+const publicRoutes: RouteObject[] = [
   {
-    path: '/login',
+    path: ROUTE.login,
     element: <LoginPage />,
   },
   {
-    path: '/register',
+    path: ROUTE.register,
     element: <RegisterPage />,
   },
   {
-    path: '/dashboard',
-    element: <ProtectedDashboard />,
-  },
-  {
-    path: '/unauthorized',
+    path: ROUTE.unauthorized,
     element: <UnauthorizedPage />,
   },
+]
+
+const protectedRoutes: RouteObject[] = [
   {
-    path: '*',
-    element: <NotFoundPage />,
+    path: '/',
+    element: <ProtectedDashboardLayout />,
+    children: [
+      {
+        path: ROUTE.plans,
+        element: <PlansPage />,
+      },
+      {
+        path: ROUTE.settings,
+        element: <SettingsPage />,
+      },
+      {
+        path: ROUTE.documents,
+        element: <DocumentsPage />,
+      },
+    ],
   },
-];
+]
 
-/**
- * Example routes for role-based access:
- * 
- * To add role-based routes:
- * 1. Import withRole and EnumUserRole:
- *    import { withAuth, withRole } from '../hocs';
- *    import { EnumUserRole } from '@/data';
- * 
- * 2. Create protected component:
- *    const AdminOnlyComponent = withRole([EnumUserRole.ADMIN])(YourComponent);
- * 
- * 3. Add route:
- *    {
- *      path: '/admin',
- *      element: <AdminOnlyComponent />,
- *    }
- * 
- * Multiple roles example:
- *    const ProfileComponent = withRole([EnumUserRole.USER, EnumUserRole.ADMIN])(YourComponent);
- */
-
+export const routes: RouteObject[] = [...publicRoutes, ...protectedRoutes]
