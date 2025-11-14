@@ -15,7 +15,7 @@ export function DashboardLayoutView() {
           backgroundColor: 'var(--color-surface)',
         }}
       >
-        <Flex direction="column" p="6" gap="6">
+        <Flex direction="column">
           <Outlet />
         </Flex>
       </Box>

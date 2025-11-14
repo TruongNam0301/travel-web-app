@@ -3,12 +3,15 @@
  * Represents a travel plan
  */
 export interface Plan {
-  id: string;
-  userId: string;
-  title: string;
-  metadata: Record<string, unknown>;
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
+  id: string
+  userId: string
+  title: string
+  metadata: {
+    description?: string
+    startDate?: string
+    endDate?: string
+  }
+  isDeleted: boolean
+  createdAt: string
+  updatedAt: string
 }
-
